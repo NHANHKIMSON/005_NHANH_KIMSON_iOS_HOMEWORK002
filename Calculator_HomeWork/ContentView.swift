@@ -1,138 +1,164 @@
-//
-//  ContentView.swift
-//  Calculator_HomeWork
-//
-//  Created by Apple on 8/13/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     @State var valueOne: String = "0"
     @State var valueTwo: String = "0"
-    @State var result: String = "0.00"
+    @State var result: String = "0"
     @State var operate: String = ""
     @State var isOperate: Bool = false
+    @State var isError: Bool = false
     
+    let buttons: [[CalcButton]] = [
+        [.clear, .negative, .percent, .divide],
+        [.seven, .eight, .nine, .mutliply],
+        [.four, .five, .six, .subtract],
+        [.one, .two, .three, .add],
+        [.zero, .decimal, .equal],
+    ]
+
     var body: some View {
-        VStack{
-            HStack{
-                Text(result)
+        ZStack {
+            VStack {
                 Spacer()
-                Text("\(operate)")
-            }
-            .multilineTextAlignment(.trailing)
-            .padding()
-            .font(.title2)
-            .foregroundStyle(.red)
-            Spacer()
-            HStack{
-                Spacer()
-                Text("\(isOperate ? valueTwo : valueOne)")
-                    .font(.title)
-                    .padding()
-            }
-            HStack{
-                Button(action: {clear(); result = "0.00"}){CalculatorButton(key: "C")}
-                Button(action: {toggleSign()}){CalculatorButton(key: "+/-")}
-                Button(action: {percent()}){CalculatorButton(key: "%")}
-                Button(action: {setOperator("÷")}){CalculatorButton(key: "÷")}
-            }
-            HStack{
-                Button(action: {appendNumber("7")}){CalculatorButton(key: "7")}
-                Button(action: {appendNumber("8")}){CalculatorButton(key: "8")}
-                Button(action: {appendNumber("9")}){CalculatorButton(key: "9")}
-                Button(action: {setOperator("×")}){CalculatorButton(key: "×")}
-            }
-            HStack{
-                Button(action: {appendNumber("4")}){CalculatorButton(key: "4")}
-                Button(action: {appendNumber("5")}){CalculatorButton(key: "5")}
-                Button(action: {appendNumber("6")}){CalculatorButton(key: "6")}
-                Button(action: {setOperator("-")}){CalculatorButton(key: "-")}
-            }
-            HStack{
-                Button(action: {appendNumber("1")}){CalculatorButton(key: "1")}
-                Button(action: {appendNumber("2")}){CalculatorButton(key: "2")}
-                Button(action: {appendNumber("3")}){CalculatorButton(key: "3")}
-                Button(action: {setOperator("+")}){CalculatorButton(key: "+")}
-            }
-            HStack{
-                Button(action: {appendNumber("0")}){
-                    Text("0")
-                        .frame(width: 190, height: 110)
-                        .foregroundStyle(.black)
-                        .font(.system(size: 40))
-                        .background(Color(.systemGray6).opacity(0.6))
+                HStack {
+                    Text(result == "0" ? "" : isError ? "" : result)
+                    Spacer()
+                    Text(operate)
                 }
-                Button(action: {appendDot()}){CalculatorButton(key: ".")}
-                Button(action: {
-                    if isOperate {
-                        result = String(calculate(valueOne: valueOne, valueTwo: valueTwo, operate: operate))
-                        valueOne = result
-                        valueTwo = "0"
-                        isOperate = false
-                        operate = ""
+                .lineLimit(1)
+                .font(.title)
+                .foregroundStyle(.red)
+                .padding()
+                
+                HStack {
+                    Spacer()
+                    Text(isOperate ? valueTwo : isError ? "Error" : valueOne)
+                        .bold()
+                        .font(.title)
+                        .lineLimit(1)
+                }
+                .padding()
+                
+                ForEach(buttons, id: \.self) { row in
+                    HStack(spacing: 8) {
+                        ForEach(row, id: \.self) { item in
+                            Button(action: {
+                                self.didTap(button: item)
+                            }, label: {
+                                Text(item.rawValue)
+                                    .font(.system(size: 32))
+                                    .frame(width: item.rawValue == "0" ? 190 : 90,
+                                           height: 110, alignment: .center)
+                                    .background(item.buttonColor)
+                                    .foregroundColor(item == .clear ? .blue : item.rawValue == "=" ? .white : .black)
+                            })
+                        }
                     }
-                }){CalculatorButton(key: "=")}
+                    .padding(.bottom, 3)
+                }
             }
         }
-        .padding(.bottom)
+    }
+
+    func didTap(button: CalcButton) {
+        switch button {
+        case .add, .subtract, .mutliply, .divide:
+            let newOp = button == .add ? "+" :
+                       button == .subtract ? "-" :
+                       button == .mutliply ? "×" : "÷"
+            setOperator(newOp)
+            
+        case .equal:
+            if isOperate {
+                result = formatNumber(calculate(valueOne: valueOne, valueTwo: valueTwo, operate: operate))
+                valueOne = result
+                valueTwo = "0"
+                isOperate = false
+                operate = ""
+            }
+            
+        case .clear:
+            clear()
+            result = "0"
+            
+        case .negative:
+            toggleSign()
+            
+        case .percent:
+            percent()
+            
+        case .decimal:
+            appendDot()
+            
+        default:
+            appendNumber(button.rawValue)
+        }
     }
     
-        
-    func clear(){
+    func clear() {
         valueOne = "0"
         valueTwo = "0"
         operate = ""
         isOperate = false
+        isError = false
     }
     
-    func CalculatorButton(key: String) -> some View{
-        Text(key)
-            .frame(width: 90, height: 110)
-            .foregroundStyle(.black)
-            .background(Color(.systemGray6).opacity(0.6))
-            .font(.system(size: 40))
-    }
-    
-    func appendNumber(_ num: String){
+    func appendNumber(_ num: String) {
         if isOperate {
-            if valueTwo == "0" { valueTwo = num }
-            else { valueTwo += num }
+            if valueTwo == "0" && num != "." {
+                valueTwo = num
+            } else {
+                valueTwo += num
+            }
         } else {
-            if valueOne == "0" { valueOne = num }
-            else { valueOne += num }
+            if valueOne == "0" && num != "." {
+                valueOne = num
+            } else {
+                valueOne += num
+            }
         }
     }
     
-    func appendDot(){
+    func appendDot() {
         if isOperate {
-            if !valueTwo.contains(".") { valueTwo += "." }
+            if !valueTwo.contains(".") {
+                valueTwo = valueTwo == "0" ? "0." : valueTwo + "."
+            }
         } else {
-            if !valueOne.contains(".") { valueOne += "." }
+            if !valueOne.contains(".") {
+                valueOne = valueOne == "0" ? "0." : valueOne + "."
+            }
         }
     }
     
-    func toggleSign(){
+    func toggleSign() {
         if isOperate {
-            if valueTwo.first == "-" { valueTwo.removeFirst() }
-            else if valueTwo != "0" { valueTwo = "-" + valueTwo }
+            if valueTwo.first == "-" {
+                valueTwo.removeFirst()
+            } else if valueTwo != "0" {
+                valueTwo = "-" + valueTwo
+            }
         } else {
-            if valueOne.first == "-" { valueOne.removeFirst() }
-            else if valueOne != "0" { valueOne = "-" + valueOne }
+            if valueOne.first == "-" {
+                valueOne.removeFirst()
+            } else if valueOne != "0" {
+                valueOne = "-" + valueOne
+            }
         }
     }
     
-    func percent(){
-        if isOperate {
-            if let v2 = Double(valueTwo) { valueTwo = String(v2 / 100) }
-        } else {
-            if let v1 = Double(valueOne) { valueOne = String(v1 / 100) }
+    func percent() {
+        if let v2 = Double(valueTwo) {
+            valueTwo = formatNumber(v2 / 100)
+        }
+        if let v1 = Double(valueOne) {
+            valueOne = formatNumber(v1 / 100)
         }
     }
-    func setOperator(_ newOp: String){
+    
+    func setOperator(_ newOp: String) {
         if isOperate, valueTwo != "0" {
-            valueOne = String(calculate(valueOne: valueOne, valueTwo: valueTwo, operate: operate))
+            valueOne = formatNumber(calculate(valueOne: valueOne, valueTwo: valueTwo, operate: operate))
             result = valueOne
             valueTwo = "0"
         }
@@ -140,7 +166,7 @@ struct ContentView: View {
         isOperate = true
     }
     
-    func calculate(valueOne: String, valueTwo: String, operate: String ) -> Double{
+    func calculate(valueOne: String, valueTwo: String, operate: String) -> Double {
         guard let value1 = Double(valueOne),
               let value2 = Double(valueTwo) else {
             return 0
@@ -149,8 +175,67 @@ struct ContentView: View {
         case "+": return value1 + value2
         case "-": return value1 - value2
         case "×": return value1 * value2
-        case "÷": return value2 != 0 ? value1 / value2 : 0
+        case "÷":
+            if value2 == 0 {
+                isError = true
+            }
+        return value1 / value2
         default: return value1
+        }
+    }
+    
+    func formatNumber(_ number: Double) -> String {
+        if number.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(Int(number))
+        } else {
+            return String(number)
+        }
+    }
+}
+
+enum Operation {
+    case add, subtract, multiply, divide, none
+    
+    var symbol: String {
+        switch self {
+        case .add: return "+"
+        case .subtract: return "-"
+        case .multiply: return "×"
+        case .divide: return "÷"
+        case .none: return ""
+        }
+    }
+}
+
+enum CalcButton: String {
+    case one = "1"
+    case two = "2"
+    case three = "3"
+    case four = "4"
+    case five = "5"
+    case six = "6"
+    case seven = "7"
+    case eight = "8"
+    case nine = "9"
+    case zero = "0"
+    case add = "+"
+    case subtract = "-"
+    case mutliply = "×"
+    case divide = "÷"
+    case equal = "="
+    case clear = "C"
+    case decimal = "."
+    case percent = "%"
+    case negative = "+/-"
+    
+    var buttonColor: Color {
+        switch self {
+        case .add, .subtract, .mutliply, .divide, .clear, .negative, .percent:
+            return Color(.systemGray5)
+        case .equal:
+            return Color(.systemBlue)
+        default:
+            return Color(.systemGray5.withAlphaComponent(0.5))
         }
     }
 }
