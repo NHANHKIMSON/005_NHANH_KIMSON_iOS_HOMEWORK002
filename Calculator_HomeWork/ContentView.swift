@@ -32,7 +32,7 @@ struct ContentView: View {
                 
                 HStack {
                     Spacer()
-                    Text(isOperate ? valueTwo : isError ? "Error" : valueOne)
+                    Text(isOperate ? valueTwo : isError ? "Error" : result == "0" ? valueOne : "0")
                         .bold()
                         .font(.title)
                         .lineLimit(1)
@@ -189,53 +189,6 @@ struct ContentView: View {
             return String(Int(number))
         } else {
             return String(number)
-        }
-    }
-}
-
-enum Operation {
-    case add, subtract, multiply, divide, none
-    
-    var symbol: String {
-        switch self {
-        case .add: return "+"
-        case .subtract: return "-"
-        case .multiply: return "×"
-        case .divide: return "÷"
-        case .none: return ""
-        }
-    }
-}
-
-enum CalcButton: String {
-    case one = "1"
-    case two = "2"
-    case three = "3"
-    case four = "4"
-    case five = "5"
-    case six = "6"
-    case seven = "7"
-    case eight = "8"
-    case nine = "9"
-    case zero = "0"
-    case add = "+"
-    case subtract = "-"
-    case mutliply = "×"
-    case divide = "÷"
-    case equal = "="
-    case clear = "C"
-    case decimal = "."
-    case percent = "%"
-    case negative = "+/-"
-    
-    var buttonColor: Color {
-        switch self {
-        case .add, .subtract, .mutliply, .divide, .clear, .negative, .percent:
-            return Color(.systemGray5)
-        case .equal:
-            return Color(.systemBlue)
-        default:
-            return Color(.systemGray5.withAlphaComponent(0.5))
         }
     }
 }
