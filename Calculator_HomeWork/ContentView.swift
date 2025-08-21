@@ -137,12 +137,14 @@ struct ContentView: View {
                 valueTwo.removeFirst()
             } else if valueTwo != "0" {
                 valueTwo = "-" + valueTwo
+                result = valueTwo
             }
         } else {
             if valueOne.first == "-" {
                 valueOne.removeFirst()
             } else if valueOne != "0" {
                 valueOne = "-" + valueOne
+                result = valueOne
             }
         }
     }
